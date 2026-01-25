@@ -1,37 +1,28 @@
 const fs = require('fs');
 
 function countStudents(path) {
-  let data;
-
+  // Reads database file synchronously
+  let fileData;
   try {
-    data = fs.readFileSync(path, 'utf8');
+    fileData = fs.readFileSync(path, 'utf8');
   } catch (err) {
     throw new Error('Cannot load the database');
   }
-
-  const lines = data.trim().split('\n');
-  const students = lines.slice(1).filter((line) => line.trim() !== '');
-
-  console.log(`Number of students: ${students.length}`);
-
-  const fields = {};
-
-  students.forEach((line) => {
-    const parts = line.split(',');
-    const firstname = parts[0];
-    const field = parts[3];
-
-    if (!fields[field]) {
-      fields[field] = [];
-    }
-    fields[field].push(firstname);
-  });
-
-  Object.keys(fields).forEach((field) => {
-    console.log(
-      `Number of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}`
-    );
-  });
+  // Calculate number of students total in database
+  // DOES NOT INCLUDE HEADER LINE OF CSV FILE AND BLANK LINES
+  console.log(`Number of students: ${fileData.split('\n').length - 2}`);
+  // calculate CS fields and SWE fields
+  const CS = fileData.split('\n').filter((line) => line.includes('CS')).length;
+  const SWE = fileData.split('\n').filter((line) => line.includes('SWE')).length;
+  // Put all student names of CS and SWE fields in arrays
+  let CSstudents = fileData.split('\n').filter((line) => line.includes('CS')).map((line) => line.split(',')[0]);
+  let SWEstudents = fileData.split('\n').filter((line) => line.includes('SWE')).map((line) => line.split(',')[0]);
+  // add spaces between elements in arrays
+  CSstudents = CSstudents.join(', ');
+  SWEstudents = SWEstudents.join(', ');
+  // log
+  console.log(`Number of students in CS: ${CS}. List: ${CSstudents}`);
+  console.log(`Number of students in SWE: ${SWE}. List: ${SWEstudents}`);
 }
 
 module.exports = countStudents;
