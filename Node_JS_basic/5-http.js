@@ -1,57 +1,31 @@
+// same as 3-read_file_async.js with the addition of the following:
+// '/' => 'Hello Holberton School!'`
+// '/students' => 'This is the list of students' followed by the
+// same content as the file 3-read_file_async.js
+// Name of the database passed as arugment to file
+
 const http = require('http');
-const fs = require('fs');
+const countStudents = require('./3-read_file_async');
 
-const database = process.argv[2];
-
-const app = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-
-  if (req.url === '/') {
-    res.end('Hello Holberton School!');
-    return;
+const app = http.createServer(async (req, res) => {
+  if (req.method === 'GET') {
+    if (req.url === '/') {
+      res.end('Hello Holberton School!');
+    } else if (req.url === '/students') {
+      await countStudents(process.argv[2])
+        .then((data) => {
+          res.write('This is the list of our students\n');
+          res.write(`Number of students: ${data.CS.num + data.SWE.num}\n`);
+          res.write(`Number of students in CS: ${data.CS.num}. List: ${data.CS.list}\n`);
+          res.write(`Number of students in SWE: ${data.SWE.num}. List: ${data.SWE.list}`);
+          res.end();
+        })
+        .catch((err) => {
+          res.write('This is the list of our students\n');
+          res.end(err.message);
+        });
+    }
   }
-
-  if (req.url === '/students') {
-    res.write('This is the list of our students\n');
-
-    fs.readFile(database, 'utf8', (err, data) => {
-      if (err) {
-        res.end('Cannot load the database');
-        return;
-      }
-
-      const lines = data.trim().split('\n');
-      const students = lines.slice(1).filter((line) => line.trim() !== '');
-
-      res.write(`Number of students: ${students.length}\n`);
-
-      const fields = {};
-
-      students.forEach((line) => {
-        const parts = line.split(',');
-        const firstname = parts[0];
-        const field = parts[3];
-
-        if (!fields[field]) {
-          fields[field] = [];
-        }
-        fields[field].push(firstname);
-      });
-
-      Object.keys(fields).forEach((field) => {
-        res.write(
-          `Number of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}\n`
-        );
-      });
-
-      res.end();
-    });
-    return;
-  }
-
-  res.end();
-});
-
-app.listen(1245);
+}).listen(1245);
 
 module.exports = app;
