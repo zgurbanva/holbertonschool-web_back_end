@@ -1,40 +1,39 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 
-function countStudents(path) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path, 'utf8', (err, data) => {
-      if (err) {
-        reject(new Error('Cannot load the database'));
-        return;
-      }
-
-      const lines = data.trim().split('\n');
-      const students = lines.slice(1).filter((line) => line.trim() !== '');
-
-      console.log(`Number of students: ${students.length}`);
-
-      const fields = {};
-
-      students.forEach((line) => {
-        const parts = line.split(',');
-        const firstname = parts[0];
-        const field = parts[3];
-
-        if (!fields[field]) {
-          fields[field] = [];
-        }
-        fields[field].push(firstname);
-      });
-
-      Object.keys(fields).forEach((field) => {
-        console.log(
-          `Number of students in ${field}: ${fields[field].length}. List: ${fields[field].join(', ')}`
-        );
-      });
-
-      resolve();
-    });
-  });
-}
+const countStudents = async (path) => {
+  let fileData;
+  try {
+    fileData = await fs.readFile(path, 'utf8');
+  } catch (err) {
+    throw new Error('Cannot load the database');
+  }
+  // Calculate number of students total in database
+  // DOES NOT INCLUDE HEADER LINE OF CSV FILE AND BLANK LINES
+  console.log(`Number of students: ${fileData.split('\n').length - 2}`);
+  // get list of every unique field value
+  const fields = fileData.split('\n').map((line) => line.split(',')[3]);
+  // get only unique values
+  const uniqueFields = [...new Set(fields)];
+  // start looping for students in each field
+  // declare dict to populate with num of students in field + list of students
+  const dict = {};
+  for (let i = 0; i < uniqueFields.length; i += 1) {
+    // get number of students in each field
+    const studentsInField = fileData.split('\n').filter((line) => line.includes(uniqueFields[i])).length;
+    // get list of students in each field
+    const studentsInFieldList = fileData.split('\n').filter((line) => line.includes(uniqueFields[i])).map((line) => line.split(',')[0]);
+    // add spaces between elements in arrays
+    const studentsInFieldListString = studentsInFieldList.join(', ');
+    // log
+    console.log(`Number of students in ${uniqueFields[i]}: ${studentsInField}. List: ${studentsInFieldListString}`);
+    // add new sets to dict
+    dict[uniqueFields[i]] = {
+      num: studentsInField,
+      list: studentsInFieldListString,
+    };
+  }
+  console.log(dict);
+  return dict;
+};
 
 module.exports = countStudents;
